@@ -10,7 +10,7 @@ This map ([view here](https://ky-chin.github.io/japan-liver-cancer/index.html)) 
 Clicking on the markers will bring up a pop-up with the clinic classification phone number, website, and link for directions to the respective location. Clinic classification varies from general hospitals, cancer-specific centers, and research institutes. Any links will open in a new tab.
 
 ### Project Goal
-The goal of this project is to provide an interactive experience for those who are seeking cancer treatment. There are many centers that span across the country, and of course there are many more that are not included in this map. The map can be expanded upon as needed, and can be adjusted to suit different needs.
+The goal of this project is to provide an interactive experience for those who are seeking cancer treatment. There are many centers that span across the country, and of course there are many more that are not included in this map. The map can be expanded upon as needed, and can be adjusted to suit different needs. The map has been optimized for mobile use, and is fully functional on smartphones or other mobile devices.
 
 
 ### Libraries and Sources
