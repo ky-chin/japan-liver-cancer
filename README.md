@@ -3,7 +3,7 @@
 ![](assets/hospital.jpg)
 
 ### Project Description
-This map ([view here](https://ky-chin.github.io/japan-liver-cancer/index.html) is an interactive map that shows the location and basic information on select cancer treatment centers in Japan. The sidebar listings provide clinic names, addresses, and phone numbers.
+This map ([view here](https://ky-chin.github.io/japan-liver-cancer/index.html)) is an interactive map that shows the location and basic information on select cancer treatment centers in Japan. The sidebar listings provide clinic names, addresses, and phone numbers.
 
 ![](assets/example.png)
 
