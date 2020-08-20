@@ -1,11 +1,11 @@
-# Tour Spots in Japan
+# Cancer Treatment and Hospital Locator
 
-img header
+![](assets/treatment.jpg)
 
 ### Project Description
 This map ([view here](https://ky-chin.github.io/japantour/index2.html)) is an interactive map that shows the location and basic information on select cancer treatment centers in Japan. The sidebar listings provide clinic names, addresses, and phone numbers.
 
-img example
+![](assets/example.png)
 
 Clicking on the markers will bring up a pop-up with the clinic classification phone number, website, and link for directions to the respective location. Clinic classification varies from general hospitals, cancer-specific centers, and research institutes. Any links will open in a new tab.
 
