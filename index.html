@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Cancer Treatment Centers</title>
+    <meta name='robots' content='noindex, nofollow'>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700' rel='stylesheet'>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+      body {
+        color:#404040;
+        font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+        margin:0;
+        padding:0;
+        -webkit-font-smoothing:antialiased;
+      }
+
+      * {
+        -webkit-box-sizing:border-box;
+        -moz-box-sizing:border-box;
+        box-sizing:border-box;
+      }
+
+      .sidebar {
+        position:absolute;
+        width:33.3333%;
+        height:100%;
+        top:0;left:0;
+        overflow:hidden;
+        border-right:1px solid rgba(0,0,0,0.25);
+      }
+      .pad2 {
+        padding:20px;
+      }
+
+      .map {
+        position:absolute;
+        left:33.3333%;
+        width:66.6666%;
+        top:0;bottom:0;
+      }
+
+      h1 {
+        font-size:22px;
+        margin:0;
+        font-weight:400;
+        line-height: 20px;
+        padding: 20px 2px;
+      }
+
+      a {
+        color:#404040;
+        text-decoration:none;
+      }
+
+      a:hover {
+        color:#101010;
+      }
+
+      .heading {
+        background:#fff;
+        border-bottom:1px solid #eee;
+        min-height:60px;
+        line-height:60px;
+        padding:0 10px;
+        background-color: #00853e;
+        color: #fff;
+      }
+
+      .listings {
+        height:100%;
+        overflow:auto;
+        padding-bottom:60px;
+      }
+
+      .listings .item {
+        display:block;
+        border-bottom:1px solid #eee;
+        padding:10px;
+        text-decoration:none;
+      }
+
+      .listings .item:last-child { border-bottom:none; }
+      .listings .item .title {
+        display:block;
+        color:#00853e;
+        font-weight:700;
+      }
+
+      .listings .item .title small { font-weight:400; }
+      .listings .item.active .title,
+      .listings .item .title:hover { color:#8cc63f; }
+      .listings .item.active {
+        background-color:#f8f8f8;
+      }
+      ::-webkit-scrollbar {
+        width:3px;
+        height:3px;
+        border-left:0;
+        background:rgba(0,0,0,0.1);
+      }
+      ::-webkit-scrollbar-track {
+        background:none;
+      }
+      ::-webkit-scrollbar-thumb {
+        background:#00853e;
+        border-radius:0;
+      }
+
+      .marker {
+        border: none;
+        cursor: pointer;
+        height: 40px;
+        width: 40px;
+        background-image: url(assets/hmarker.png);
+        background-color: rgba(0, 0, 0, 0);
+      }
+
+      .clearfix { display:block; }
+      .clearfix:after {
+        content:'.';
+        display:block;
+        height:0;
+        clear:both;
+        visibility:hidden;
+      }
+
+      /* Marker tweaks */
+      .mapboxgl-popup {
+        padding-bottom: 50px;
+      }
+
+      .mapboxgl-popup-close-button {
+        display:none;
+      }
+      .mapboxgl-popup-content {
+        font:400 15px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+        padding:0;
+        width:250px;
+      }
+      .mapboxgl-popup-content-wrapper {
+        padding:1%;
+      }
+      .mapboxgl-popup-content h3 {
+        background:#91c949;
+        color:#fff;
+        margin:0;
+        display:block;
+        padding:10px;
+        border-radius:3px 3px 0 0;
+        font-weight:700;
+        margin-top:-15px;
+      }
+
+      .mapboxgl-popup-content h4 {
+        margin:0;
+        display:block;
+        padding: 10px 10px 10px 10px;
+        font-weight:400;
+      }
+
+      .mapboxgl-popup-content div {
+        padding:10px;
+      }
+
+      .mapboxgl-container .leaflet-marker-icon {
+        cursor:pointer;
+      }
+
+      .mapboxgl-popup-anchor-top > .mapboxgl-popup-content {
+        margin-top: 15px;
+      }
+
+      .mapboxgl-popup-anchor-top > .mapboxgl-popup-tip {
+        border-bottom-color: #91c949;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='sidebar'>
+      <div class='heading'>
+        <h1>Treatment Centers</h1>
+      </div>
+      <div id='listings' class='listings'></div>
+    </div>
+    <div id='map' class='map'></div>
+    <script>
+      // This will let you use the .remove() function later on
+      if (!('remove' in Element.prototype)) {
+        Element.prototype.remove = function() {
+          if (this.parentNode) {
+              this.parentNode.removeChild(this);
+          }
+        };
+      }
+
+      mapboxgl.accessToken = 'pk.eyJ1Ijoia3ljaGluIiwiYSI6ImNrYTRnYzFwYjAwNWcza3BnNGJkOGY3YjgifQ.DcQQ55PYEsdyiaFoGtSAgA';
+      /**
+       * Add the map to the page
+      */
+      var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/light-v10',
+        center: [139.418648, 35.8435173],
+        zoom: 5,
+        scrollZoom: false
+      });
+
+      var clinics = {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                135.1975361,
+                34.6882028
+              ]
+            },
+            "properties": {
+              "name": "Saisei Mirai Clinic KOBE",
+              "type":"Cancer Treatment Center",
+              "website":"https://www.saisei-mirai.or.jp/treatments/",
+              "phoneFormatted": "(+81) 78-862-1001",
+              "phone": "788621001",
+              "address": "5 Chome−1−14 23F, Hamabedori, Chuo Ward, Kobe",
+              "city": "Hyogo 651-0083",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//Japan,+%E3%80%92651-0083+Hyogo,+Kobe,+Chuo+Ward,+Hamabedori,+5+Chome%E2%88%921%E2%88%9214+%E7%A5%9E%E6%88%B8%E5%95%86%E5%B7%A5%E8%B2%BF%E6%98%93%E3%82%BB%E3%83%B3%E3%82%BF%E3%83%BC%E3%83%93%E3%83%AB23F+Saisei+Mirai+Clinic+KOBE/@34.6882028,135.1975361,17z/data=!3m1!5s0x60008ef641e6b015:0xd75891b22e639e2b!4m9!4m8!1m0!1m5!1m1!1s0x60008ef641e7eb69:0xff6d8dae927866f!2m2!1d135.1997248!2d34.6882028!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.7655946,
+                35.6655689
+              ]
+            },
+            "properties": {
+              "name":"National Cancer Center Hospital",
+              "type":"Cancer Treatment Center, Research Institute",
+              "website":"https://www.ncc.go.jp/jp/index.html",
+              "phoneFormatted": "(+81) 3-3542-2511",
+              "phone": "335422511",
+              "address": "5 Chome-1-1 Tsukiji, Chuo City",
+              "city": "Tokyo 104-0045",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//National+Cancer+Center+Hospital,+5+Chome-1-1+Tsukiji,+Chuo+City,+Tokyo+104-0045,+Japan/@35.6655689,139.7655946,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x60188bdc2f413f7f:0x5cc096e684f6bace!2m2!1d139.7677833!2d35.6655689!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.9397579,
+                35.9016973
+              ]
+            },
+            "properties": {
+              "name":"National Cancer Center Hospital EAST",
+              "type":"Cancer Treatment Center",
+              "website":"https://www.ncc.go.jp/jp/index.html",
+              "phoneFormatted": "(+81) 4-7133-1111",
+              "phone": "+471331111",
+              "address": "6 Chome-5-1 Kashiwanoha, Kashiwa",
+              "city": "Chiba 277-8577",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//National+Cancer+Center+Hospital+East,+6+Chome-5-1+Kashiwanoha,+Kashiwa,+Chiba+277-8577,+Japan/@35.9016973,139.9397579,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x60189c018596607b:0x7ab0e179993cddc3!2m2!1d139.9419466!2d35.9016973!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.7656825,
+                35.6662936
+              ]
+            },
+            "properties": {
+              "name":"Aichi Cancer Center Hospital",
+              "type":"Cancer Treatment Center",
+              "website":"http://www.pref.aichi.jp/cancer-center/",
+              "phoneFormatted": "(+81) 52-762-6111",
+              "phone": "527626111",
+              "address": "1-1 Kanokoden, Chikusa Ward, Nagoya",
+              "city": "Aichi 464-0021",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//Aichi+Cancer+Center+Hospital,+1-1+Kanokoden,+Chikusa+Ward,+Nagoya,+Aichi+464-0021,+Japan/@35.6662936,139.7656825,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x6003701ab6829b73:0x2ebec20c0737d106!2m2!1d136.9714368!2d35.1764323!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.7535399,
+                35.7298463
+              ]
+            },
+            "properties": {
+              "name":"Tokyo Metropolitan Cancer and Infectious Diseases Center Komagome Hospital",
+              "type":"Cancer Treatment Center",
+              "website":"http://www.cick.jp/",
+              "phoneFormatted": "(+81) 3-3823-2101",
+              "phone": "338232101",
+              "address": "3 Chome-18 Honkomagome, Bunkyo City",
+              "city": "Tokyo 113-0021",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//Tokyo+Metropolitan+Cancer+and+Infectious+Diseases+Center+Komagome+Hospital,+3+Chome-18+Honkomagome,+Bunkyo+City,+Tokyo+113-0021,+Japan/@35.7298463,139.7535399,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x60188dc667a9f489:0x7febfa7b7174288b!2m2!1d139.7557286!2d35.7298463!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.7748489,
+                35.6671841
+              ]
+            },
+            "properties": {
+              "name":"St. Luke's International Hospital",
+              "type":"General University Hospital",
+              "website":"http://hospital.luke.ac.jp/",
+              "phoneFormatted": "(+81) 3-3541-5151",
+              "phone": "335415151",
+              "address": "9-1 Akashicho, Chuo City",
+              "city": "Tokyo 104-8560",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//St.+Luke&#8217;s+International+Hospital,+9-1+Akashicho,+Chuo+City,+Tokyo+104-8560,+Japan/@35.6671841,139.7748489,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x1526ba16fb4380d1:0x76f25016ae90d48!2m2!1d139.7770376!2d35.6671841!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                135.7709041,
+                35.0241202
+              ]
+            },
+            "properties": {
+              "name":"Japan Society of Clinical Oncology",
+              "type":"Medical Clinic",
+              "website":"http://www.jsco.or.jp/english/",
+              "phoneFormatted": "(+81) 75-751-7150",
+              "phone": "757517150",
+              "address": "14-11 Yoshidakawaracho, Sakyo Ward",
+              "city": "Kyoto, 606-8305",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//Japan+Society+of+Clinical+Oncology,+14-11+Yoshidakawaracho,+Sakyo+Ward,+Kyoto,+606-8305,+Japan/@35.0241202,135.7709041,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x6001085faea37e99:0xb5c1152b255a30bd!2m2!1d135.7730928!2d35.0241158!3e0"
+            }
+          },
+          {
+            "type": "Feature",
+            "geometry": {
+              "type": "Point",
+              "coordinates": [
+                139.7930783,
+                35.6338732
+              ]
+            },
+            "properties": {
+              "name":"Japanese Foundation for Cancer Research",
+              "type":"Research Institute",
+              "website":"http://www.jfcr.or.jp/",
+              "phoneFormatted": "(+81) 3-3520-0111",
+              "phone": "335200111",
+              "address": "3 Chome-8-31 Ariake, Koto City",
+              "city": "Tokyo 135-0063",
+              "country": "Japan",
+              "directions":"https://www.google.com/maps/dir//Japanese+Foundation+for+Cancer+Research,+3+Chome-8-31+Ariake,+Koto+City,+Tokyo+135-0063,+Japan/@35.6338732,139.7930783,17z/data=!4m9!4m8!1m0!1m5!1m1!1s0x601889c2c249a333:0x48d06f4f700d708!2m2!1d139.795267!2d35.6338732!3e0"
+            }
+
+          }
+        ]
+      };
+
+
+      /**
+       * Assign a unique id to each store. You'll use this `id`
+       * later to associate each point on the map with a listing
+       * in the sidebar.
+      */
+      clinics.features.forEach(function(clinic, i){
+        clinic.properties.id = i;
+      });
+
+      /**
+       * Wait until the map loads to make changes to the map.
+      */
+      map.on('load', function (e) {
+        /**
+         * This is where your '.addLayer()' used to be, instead
+         * add only the source without styling a layer
+        */
+        map.addSource("places", {
+          "type": "geojson",
+          "data": clinics
+        });
+
+        /**
+         * Add all the things to the page:
+         * - The location listings on the side of the page
+         * - The markers onto the map
+        */
+        buildLocationList(clinics);
+        addMarkers();
+      });
+
+      /**
+       * Add a marker to the map for every store listing.
+      **/
+      function addMarkers() {
+        /* For each feature in the GeoJSON object above: */
+        clinics.features.forEach(function(marker) {
+          /* Create a div element for the marker. */
+          var el = document.createElement('div');
+          /* Assign a unique `id` to the marker. */
+          el.id = "marker-" + marker.properties.id;
+          /* Assign the `marker` class to each marker for styling. */
+          el.className = 'marker';
+
+          /**
+           * Create a marker using the div element
+           * defined above and add it to the map.
+          **/
+          new mapboxgl.Marker(el, { offset: [0, -23] })
+            .setLngLat(marker.geometry.coordinates)
+            .addTo(map);
+
+          /**
+           * Listen to the element and when it is clicked, do three things:
+           * 1. Fly to the point
+           * 2. Close all other popups and display popup for clicked store
+           * 3. Highlight listing in sidebar (and remove highlight for all other listings)
+          **/
+          el.addEventListener('click', function(e){
+            /* Fly to the point */
+            flyToStore(marker);
+            /* Close all other popups and display popup for clicked store */
+            createPopUp(marker);
+            /* Highlight listing in sidebar */
+            var activeItem = document.getElementsByClassName('active');
+            e.stopPropagation();
+            if (activeItem[0]) {
+              activeItem[0].classList.remove('active');
+            }
+            var listing = document.getElementById('listing-' + marker.properties.id);
+            listing.classList.add('active');
+          });
+        });
+      }
+
+      /**
+       * Add a listing for each store to the sidebar.
+      **/
+      function buildLocationList(data) {
+        data.features.forEach(function(clinic, i){
+          /**
+           * Create a shortcut for `store.properties`,
+           * which will be used several times below.
+          **/
+          var prop = clinic.properties;
+
+          /* Add a new listing section to the sidebar. */
+          var listings = document.getElementById('listings');
+          var listing = listings.appendChild(document.createElement('div'));
+          /* Assign a unique `id` to the listing. */
+          listing.id = "listing-" + prop.id;
+          /* Assign the `item` class to each listing for styling. */
+          listing.className = 'item';
+
+          /* Add the link to the individual listing created above. */
+          var link = listing.appendChild(document.createElement('a'));
+          link.href = '#';
+          link.className = 'title';
+          link.id = "link-" + prop.id;
+          link.innerHTML = prop.name;
+
+          /* Add details to the individual listing. */
+          var details = listing.appendChild(document.createElement('div'));
+          details.innerHTML = prop.address + '<br>' + prop.city;
+          if (prop.phone) {
+            details.innerHTML += ' · ' + prop.phoneFormatted;
+          }
+
+          /**
+           * Listen to the element and when it is clicked, do four things:
+           * 1. Update the `currentFeature` to the store associated with the clicked link
+           * 2. Fly to the point
+           * 3. Close all other popups and display popup for clicked store
+           * 4. Highlight listing in sidebar (and remove highlight for all other listings)
+          **/
+          link.addEventListener('click', function(e){
+            for (var i=0; i < data.features.length; i++) {
+              if (this.id === "link-" + data.features[i].properties.id) {
+                var clickedListing = data.features[i];
+                flyToStore(clickedListing);
+                createPopUp(clickedListing);
+              }
+            }
+            var activeItem = document.getElementsByClassName('active');
+            if (activeItem[0]) {
+              activeItem[0].classList.remove('active');
+            }
+            this.parentNode.classList.add('active');
+          });
+        });
+      }
+
+      /**
+       * Use Mapbox GL JS's `flyTo` to move the camera smoothly
+       * a given center point.
+      **/
+      function flyToStore(currentFeature) {
+        map.flyTo({
+          center: currentFeature.geometry.coordinates,
+          zoom: 12
+        });
+      }
+
+      /**
+       * Create a Mapbox GL JS `Popup`.
+      **/
+      function createPopUp(currentFeature) {
+        var popUps = document.getElementsByClassName('mapboxgl-popup');
+        if (popUps[0]) popUps[0].remove();
+        var popup = new mapboxgl.Popup({closeOnClick: false})
+          .setLngLat(currentFeature.geometry.coordinates)
+          .setHTML('<h3><center>' + currentFeature.properties.name + '</h3><center><b>' + currentFeature.properties.type + '</b><center>· phone: ' + currentFeature.properties.phoneFormatted +
+            '<br>· website: (<u><a href="' + currentFeature.properties.website + '" target="_blank">HERE</u>)</a>' + '<br>(<u><a href="' + currentFeature.properties.directions + '" target="_blank">DIRECTIONS</u>)</a>')
+          .addTo(map);
+      }
+    </script>
+  </body>
+</html>
